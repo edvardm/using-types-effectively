@@ -1,0 +1,20 @@
+[project]
+name = "ute"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "pandoc-include>=1.4.3",
+    "pytest>=8.3.5",
+    "pytest-markdown-docs>=0.7.1",
+]
+
+[tool.ruff]
+
+[tool.ruff.lint]
+ignore = ["F841"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
