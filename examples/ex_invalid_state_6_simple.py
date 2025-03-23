@@ -39,31 +39,27 @@ def make_radiant(artifact: Artifact) -> Artifact:
         return artifact
 
 
-def main():
-    print("First shalt thou take out the Holy Pin.")
-    unholy_grenade = Artifact(
-        name="Holy Hand Grenade of Antioch",
-        power=1000,
-        state=State.UNHOLY,
-    )
+print("First shalt thou take out the Holy Pin.")
+unholy_grenade = Artifact(
+    name="Holy Hand Grenade of Antioch",
+    power=1000,
+    state=State.UNHOLY,
+)
 
-    print("Then shalt thou count to three, no more, no less.")
-    normal_grenade = bless_artifact(unholy_grenade)
+print("Then shalt thou count to three, no more, no less.")
+normal_grenade = bless_artifact(unholy_grenade)
 
-    print(
-        "Four shalt thou not count, neither count thou two, excepting that thou then proceed to three. Five is right out."
-    )
-    blessed_grenade = bless_artifact(normal_grenade)
+print(
+    "Four shalt thou not count, neither count thou two, "
+    "excepting that thou then proceed to three. Five is right out."
+)
+blessed_grenade = bless_artifact(normal_grenade)
 
-    print(
-        "Once the number three, being the third number, be reached, then lobbest thou thy Holy Hand Grenade of Antioch towards thy foe, who, being naughty in My sight, shall snuff it."
-    )
+print(
+    "Once the number three, being the third number, be reached, then lobbest thou "
+    "thy Holy Hand Grenade of Antioch towards thy foe, who, being naughty in My sight, shall snuff it."
+)
 
-    radiant_grenade = make_radiant(blessed_grenade)
+radiant_grenade = make_radiant(blessed_grenade)
 
-    # This will play the expensive animation but not change the state, useless call we would want to avoid
-    bless_artifact(radiant_grenade)
-
-
-if __name__ == "__main__":
-    main()
+bless_artifact(radiant_grenade)  # but this was already blessed..

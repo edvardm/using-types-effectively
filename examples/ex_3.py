@@ -16,7 +16,7 @@ def heal_player(player_id: PlayerID, amount: int) -> None:
 monster_id = MonsterID(42)
 player_id = PlayerID(1)
 
-damage_monster(monster_id, 10)  # OK
-heal_player(player_id, 5)  # OK
+damage_monster(monster_id, 10)
+heal_player(player_id, 5)
 
-damage_monster(player_id, 10)
+damage_monster(player_id, 10)  # type: ignore[arg-type]

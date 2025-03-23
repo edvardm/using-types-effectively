@@ -1,0 +1,20 @@
+project:
+ output-dir: _site
+ render:
+    - ute.qmd
+
+
+format:
+  html:
+    code-link: true
+    code-fold: true
+    toc: true
+    toc-depth: 3
+    theme: 
+        - cosmo
+        - custom.scss
+    html-math-method: mathjax
+
+format-links:
+  - html
+

@@ -1,4 +1,8 @@
-Item = dict[str, str | int]
+from typing import TypedDict
+
+
+class Item(TypedDict):
+    type: str
 
 
 def use_item(item: Item) -> str:

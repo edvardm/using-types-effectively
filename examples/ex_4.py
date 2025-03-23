@@ -28,9 +28,9 @@ class Inventory(Generic[T]):
 
 
 books = Inventory[SpellBook]()
-books.add(SpellBook("Fireball", 10))  # OK
+books.add(SpellBook("Fireball", 10))
 
 items = Inventory[Item]()
-items.add(Item("Health Potion", 50))  # OK
+items.add(Item("Health Potion", 50))
 
-items.add(SpellBook("Ice Lance", 8))  # mypy error
+items.add(SpellBook("Call Lightning", 8))  # type: ignore[arg-type]

@@ -2,4 +2,9 @@
 .*cache
 __pycache__
 ute.md
-ute.md.gz
+*.gz
+
+/.quarto/
+_site
+.make-*
+site.zip

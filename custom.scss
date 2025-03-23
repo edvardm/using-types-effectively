@@ -1,0 +1,9 @@
+/*-- scss:rules --*/
+div.keywords > * {
+    display: none;
+}
+
+// hide footnotes, inline is fine with html
+.footnotes {
+    display: none;
+  }

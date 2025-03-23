@@ -1,0 +1,289 @@
+---
+title: "Using Types Effectively"
+date: last-modified
+version: 1.0
+author:
+  - name: Edvard Majakari
+    email: edvard+ute@rakettitiede.com
+keywords: ["typing", "programming", "python", "mypy", "type systems"]
+toc: true
+number-sections: false
+page-layout: article
+bibliography: refs.bib
+
+nocite: |
+    - @pierce2002types
+    - @wlaschin2020designing
+    - @minsky2017caml
+    - @king2019parse
+    - @noonan2020ghosts
+    - @harper2009tspl
+
+custom-callout:
+  cs:
+    title: "def"
+    icon-symbol: "🎓"
+    color: "blue"
+  fixme:
+    title: "FIXME"
+    icon-symbol: "⚠️"
+    color: "orange"
+
+filters:
+    - include-code-files
+    - custom-callout
+---
+
+In this article, we'll explore practical ways to leverage static typing. Starting from basic union types to more refined concepts like Algebraic Data Types (ADTs) and finally Phantom types. To keep things a bit more interesting, we'll apply these ideas to a fantasy-themed dungeon crawler RPG setting, illustrating how thoughtful domain modeling can neatly sidestep entire classes of bugs.
+
+The core idea here is straightforward yet powerful: *making invalid states unrepresentable* by just using *type system*. This clever strategy helps us catch numerous errors at compile-time (or, in Python’s case, during type analysis), significantly reducing the likelihood of bugs that might otherwise inconvenience end users.
+
+While this principle shines brightest in compiled languages, excellent work accomplished by mypy developers can bring us most of the same benefits. Rather than just preventing trivial mistakes (like letters sneaking into postal codes), a well-structured type system can express complex, logical transitions without adding any runtime overhead. Done right, this approach doesn't just prevent errors; it also makes code easier to read and maintain. It is also worth emphasizing that the type system described here is implemented by `mypy`, not Python itself.
+
+Additionally, it can reduce or entirely eliminate certain forms of errors. If a condition simply _cannot occur_ according to your types, there's no need to test for it explicitly.
+
+::: {.callout-note}
+Examples assume Python 3.10+ to leverage the `match` statement and ML-style syntax for union types (`|`).
+:::
+
+## Acknowledgements
+
+I really wish to thank Marko Saaresto for all good suggestions, ideas and support! I also need to express my gratitude for concise, but quite eye-opening explanations and corrections by our resident Type System Sensei Lauri Alanko.
+
+##  Enum-erate and conquer
+
+Core idea in typing is to constrain set of values in such a manner that (ideally) only legal values can be assigned. Dictionaries are very common datastructures in Python and often very convenient, but become easily problematic with more large codebases. Main issues often are related to strings used as keys with dictionaries.
+
+To get started with our dungeon crawler game, assume our hero needs to be able to attack various monsters lurking in the darkness, we could come up with something like
+
+
+```{.python include="examples/ex_1_simple.py" code-line-numbers="true"}
+```
+
+::: {.callout-note}
+I tend to avoid creating variables for things which are used only once; so instead of creating the dictionary and then returning an element from it, I just return the element directly. This saves me the trouble of inventing good names and I also know that variable is very likely used more than once (with the exception of constants and loop variables) -- unless using a variable would simplify it a lot; _lengthy_ isn't the same as _complex_
+:::
+
+Shown approach presents some regrettable limitations:
+
+- No compile-time validation
+- Typos in string literals won't be caught until runtime
+- No IDE autocompletion support
+
+Worst of all, it is not uncommon to see such dictionaries passed around multiple modules, some keys created dynamically by manipulating strings etc. In such cases it is often practically impossible to see what all values are possible, or even what is the structure of valid value (assuming dictionary contains nested data)
+
+In particular, the type checker will not warn about `attack_enemy("scimitar", "special")` until runtime. One option to tackle the issue would be to change return value to `int | None` and use non-strict dictionary access, but then we would taint _all calls_ and introduce potential None error, forcing callers to (often repeatedly) check for None, thus making code unnecessarily convoluted, or risk throwing `KeyError`.
+
+### with `Literal`
+
+```{.python include="examples/ex_1_literal.py" code-line-numbers="true"}
+```
+
+Using  `Literal` we define precisely which values are permissible, gaining compile-time validation via type checker. It enables IDE autocompletion, and documents valid values directly within the type system. The code becomes more maintainable, as addition of new values forces updating the type definition.
+
+### with `Enum`
+
+```{.python include="examples/ex_1_better.py" code-line-numbers="true"}
+```
+
+This final version employing enums offers additional advantages. Values are grouped in more prominent fashion with an explicit namespace. Enum values may be modified without disrupting serialized data. Enums are self-documenting, may easily include docstrings (as values), while still providing full IDE autocompletion.
+
+##  Choose your own ADTventure
+
+We already saw how enums can be used to constrain allowed values to prevent typos or other coarse errors. In general, what we often want to do though is to create _Algebraic Data Types_ ([ADT](https://en.wikipedia.org/wiki/Algebraic_data_type)s) to model idea of varying options without making code more fragile or convoluted with unnecessary checks.
+
+Let's define some terms first: while unions and sum types are often used interchangeably, they have a crucial difference. A union type specifies a value that can be exactly one of several specified types, but without explicit tags distinguishing the variants. A sum type explicitly tags each variant, making it impossible to confuse one variant with another (often called _tagged union_ for that very reason).
+
+In other words, a sum type is a union type with a constraint that only one variant can be held at a time. Sum types are also known as tagged unions, discriminated unions, or algebraic data types (ADTs).
+
+To show how useful ADTs are, let's start simple problem of being able to `use_item()` during our adventures, starting with
+
+```{.python include="examples/ex_2_simple.py" code-line-numbers="true"}
+```
+
+While implementation might look safe due to use of `TypedDict` with `type: str` key, it is not very safe. While much better than having just `dict[str, ...]` we could have similar other dicts with `type` key, and we would be able to pass that to `use_item()` as long as the dictionary would have the same structure as `Item`.
+
+::: {.callout-note}
+While Python's `|` syntax creates a union, we are using it here to model a sum type, where each variant is a *distinct, disjoint case* of an overarching concept. In some languages (e.g., [Haskell](https://www.haskell.org/)[If there was a God, He would probably be hacking new extensions for Glasgow Haskell Compiler (GHC). Just sayin']{.aside}, Rust, F#, OCaml, Elm..), sum types are first-class language features with explicit syntax. Python lacks direct support, but we can *emulate* sum types with combined use of unions and dataclasses.
+:::
+
+Let's examine a more refined implementation required to deal with data type with varying (sub-type) constructors, demonstrating sum types:
+
+```{.python include="examples/ex_2_better.py" code-line-numbers="true"}
+```
+
+This implementation offers several advantages over our previous dictionary-based approach. First, the type checker provides static verification, ensuring that `use_item()` only accepts our defined classes. The code becomes more readable as each type's properties are explicitly defined in the class structure. When we need to extend our system with new variants (such as adding an `Armor` class), the type checker would immediately alert us if we haven't handled the new case. Perhaps most elegantly, the `match` statement works harmoniously with our sum type, providing a clean and exhaustive way to handle all possible variants without nested conditionals.
+
+The last point is worth emphasizing: `match` plays particularly well here because there is no need for catch-all `case _` branch. So unless the condition is trivial, we would prefer `match` over `if`. The code is also more clear to read, as each case is necessarily compared against the same, single expression[With if statement, each elif-branch could have completely unrelated, different condition]{.aside}.
+
+We would also get much better autocompletion for most IDEs/editors by using dataclasses over (even) typed dictionaries.
+
+##  A NewType of identity
+
+`NewType` is a powerful feature for distinguishing semantically different values that share the same base type. While similar to `Literal`s in that it constrains values, it works at the type level rather than the value level.
+
+In our dungeon crawler, we might have different types of IDs that are all integers at runtime but represent different concepts in our domain. For example, a character's health points and their level are both integers, but they represent fundamentally different things. Let's see how we can use `NewType` to prevent mixing these up:
+
+```{.python include="examples/ex_3.py" code-line-numbers="true"}
+```
+
+This approach provides more type safety, as the type checker will catch any attempts to mix up different types of IDs with zero runtime overhead, since `NewType` is erased at runtime. It also makes code more self-documenting, as the type system prominently indicates what kind of ID is expected.
+
+##  Generic fantasy inventory system
+
+Generics let you define reusable data structures that preserve type information. They build upon the concept of union types by allowing us to work with collections of any type while maintaining type safety.
+
+In our dungeon crawler, we might want to create a type-safe inventory system that can hold different types of items while ensuring we can't mix incompatible items. Let's see how generics can help:
+
+```{.python include="examples/ex_4.py" code-line-numbers="true"}
+```
+
+This example demonstrates several key benefits of generics. First, the type system knows exactly what kind of items are in each inventory, preserving type information throughout your code. Second, the type checker ensures we can't mix incompatible items, catching errors at compile time rather than runtime. Third, the same inventory code works with any type of item, making it highly reusable across your codebase. Finally, you get full IDE support with autocompletion for item-specific methods, improving developer productivity and reducing errors.
+
+As a common example, generics allow us to write flexible functions such as `filter`, `fold` (`reduce` in Python) and `map`. These are all _parametrically polymorphic, type-preserving_ functions.
+
+### A wild functor appears!
+
+Related to generics, there exists a concept so powerful I can't help not mentioning it. It is called a *functor*, which generalizes composition of "plain" functions over values which can be "mapped over". Functors are rather ubiquitous structures in functional programming languages[Every FP fanboy rants about Monads. But Functors are even more useful, and more generic! Not to mention that every monad is also a functor.]{.aside}
+
+In programming, a functor `F` is a type constructor (like `List`, `Result`, `Tree`...), _and_ a function `f` which operates on normal (unlifted) values of type `T`, returning new function which works on "lifted" values `F(T)`. Functors are _incredibly powerful_ constructs when a language has built-in support for those, providing developer
+
+- **Composition without boilerplate** allowing operations on collections without manually writing loops or comprehensions
+- **Type-safe transformations** with errors caught at compile time
+- **Consistent interfaces**: uniform API to work with arbitrarily different container types
+- **Code reusability** as functions written for simple types can be automatically "lifted" to work on containers of those types
+
+So what is it then? Are functors just clever type constructors, or merely functions conforming to an interface? Neither. A functor is an example of a *type class*^[not to confuse with classes in OOP] -- concept roughly comparable to interfaces in many mainstream languages, but with a crucial distinction; while a type implementing an interface must explicitly declare that relationship, type classes are defined *independently of the types they apply to*. A type *conforms* to given type class when the developer provides appropriate declaration, typically by creating an *instance* of the type class or supplying an *implementation* that satisfies requirements of said class. This makes the relationship entirely decoupled from the original type definition. In Rust and Scala, very similar concept appears as *traits*.
+
+While functors would not work well with type systems available for Python[This would require higher-kind types (HKTs in type-theory jargon), because functors map _types_ to another type]{.aside}, several compiled languages provide these powerful abstractions either natively (Haskell, OCaml, ReasonML) or through well-integrated libraries (like [Cats](https://typelevel.org/cats/) in Scala or [Arrow](https://arrow-kt.io/) in Kotlin).
+
+##  You shall not pass (unless valid)
+
+When you must handle data of uncertain shape (e.g., a JSON payload), _type guards_ let you refine `Any` or union types using runtime checks.
+
+In our dungeon crawler, we might receive item data from a network API or configuration file. The data structure is known but not guaranteed at compile time. Let's see how type guards can help us safely handle this:
+
+```{.python include="examples/ex_guards_5.py" code-line-numbers="true"}
+```
+
+- line 4: `TypedDict` makes the expected structure explicit instead of using raw `dict[str, ...]`
+- line 11: This ensures "name" and "difficulty" exist and have the correct types, but does NOT check whether all keys are strings
+- line 12: Type signature declares return value to be `TypeGuard[MonsterData]`, even though it is obviously `bool`. This is what mypy documentation calls ["smart booleans"](https://mypy.readthedocs.io/en/latest/type_narrowing.html#type-guards): If result is `True`, the type checker will assume `data : MonsterData`
+
+
+Type guards provide some important benefits. They allow us to *narrow* types by helping the type checker to understand the specific type after validation has occurred, thus maintaining type safety by preserving type information throughout your program. While that check happens at runtime, it still beats isinstance checks.
+
+You'll find type guards particularly valuable in several, common scenarios. When working with external APIs or data sources, they help in ensuring the data conforms to your expectations. When parsing configuration files or user input, they validate the structure before you use it.
+
+##  In a state of denial
+
+Beyond data shapes, we can also address _logical states_. This builds upon the ideas from Union Types and Type Guards to create a more expressive type to represent _state machine_.
+
+### Simple approach
+
+Let's consider a scenario with magical artifacts which can be in different states: *unholy*, *normal* or *blessed*. In addition, casting certain spell can make such item *radiant* emanating aura of healing[_Obviously_ unholy items cannot produce healing effects!]{.aside}. We might start with something like
+
+```{.python include="examples/ex_invalid_state_6_simple.py" code-line-numbers="true"}
+```
+
+Unnecessary extra call to bless would not crash the system, but surely you can imagine cases where calling a function accidentally too often might be extremely harmful[Which is why _idempotent functions_ are often desirable]{.aside}. In this case it only executes 'expensive' animation twice. But we have more severe issues:
+
+- State transitions are validated at runtime, meaning errors only surface when the code is executed
+- The single `Artifact` class with a state field makes it possible to create invalid combinations (e.g., a blessed artifact with healing power)
+- Type information is lost, making it harder for the type checker to catch errors
+- The code requires manual state checking and error handling
+
+### Improved approach with type-based states
+
+```{.python include="examples/ex_invalid_state_6_better.py" code-line-numbers="true"}
+```
+
+Now we ensure that artifact transformations follows strict rules by taking better advantage of types. The overloaded `bless_artifact()` function demonstrates how we can use the type system to enforce different behaviors based on input type.
+
+In particular, now we have encoded _valid state transitions_ dictated by domain logic, by just using the type system.
+
+Now the type system provides strong guarantees about our artifact system, ensuring that only valid state transitions are possible, eg. by preventing attempts to bless already blessed artifacts. Each artifact state has its own specific properties and behaviors clearly defined by its class structure. Most importantly, invalid combinations of states simply cannot exist in our program.
+
+There's one big issue though: at worst, cardinality of types we need to represent all possible states is a Cartesian product of all the types we've declared. Creating dataclasses for each combination would quickly become unwieldy, awkward even. Type signatures are quite convoluted otherwise as well.
+
+##  Ghosts in the type machine
+
+_Phantom types_ are most useful when we need generic operations that apply to a family of related types, allowing us to create even more sophisticated type-level constraints. While technically idea is quite simple, it is clever enough to elaborate on that a bit.
+
+Let's look at a simple example first, conveying the key idea. Phantom type is literally a type which appears only in the type signature, ie. there is no matching instance of that type present anywhere. Back to our hero, assume we'd want to ensure any spell must be checked to be safe via some function, and we would want to achieve this with types. We could of course create extra types for each possible combination, but as seen before, this becomes awkward very quickly. Phantom types allow us to "tag" any existing types with meaningul symbols:
+
+```{.python include="examples/ex_phantom.py"}
+```
+
+::: {.callout-note}
+For more serious use of phantom types in Python, you might want to check out [https://github.com/antonagestam/phantom-types/](https://github.com/antonagestam/phantom-types/)
+:::
+
+Pay extra attention to our `Phantom` class wrapper. It is extremely simple dataclass with only sigle field `v`, containing the actual value. But there is also this type variable `Marker` which doesn't appear anywhere in the class definition. This is exactly the idea! In `read_scroll()` function it allows us to convince the type checker that if the function doesn't throw, then our scroll is guaranteed to be safe.
+
+Revisiting our slightly less trivial artifact system, the explosion of types needed to handle all potential combinations is the main issue: we needed separate types (classes!) for almost every combination. Phantom types are very suitable here, as they allow us to refine the type focusing on one particular aspect only -- denoted by the tag/marker we use:
+
+```{.python include="examples/ex_phantom_7.py" end-line=98}
+```
+
+Phantom types provide significant benefits over the previous implementation. By utilizing single `Artifact` class with type parameters, we avoid the combinatorial explosion of classes that would otherwise be necessary to represent all possible states. The phantom types `Unholy`, `Normal` and `Blessed` allow us to maintain strong type safety while allowing other properties to remain independent and composable. We can freely combine different states without creating dedicated classes for each combination! Despite this flexibility, the type system continues to enforce valid state transitions through carefully defined overloaded functions. Perhaps most importantly, phantom types introduce zero runtime overhead since they exist purely at the type-checking level and are erased during compilation.
+
+
+::: {.callout-note}
+Using `--strict` with mypy is probably necessary for any working phantom type implementation. Not that we would not recommend using that in any case for any mission-critical software.
+:::
+
+##  Venturing further
+
+There are many more advanced concepts in type systems that we haven't covered here. For example:
+
+- **Generalized Algebraic Datatypes**: GADTs extend ADTs, allowing constructors' result types to depend on input argument types, enabling more precise type-level constraints and stronger compile-time guarantees
+- **Dependent Types**: Types that depend on other types
+- **Type Inference**: Automatically determining types based on usage
+- **Type-Level Programming**: Programming at the level of types rather than values
+
+
+##  Common pitfalls
+
+After toying with some typing tricks, let's quickly touch on some common unfortunate practises many Python developers tend to make even when working with critical codebases:
+
+- **Overusing `Any` and vague types**. While liberally sprinkling code with `Any` might silence type-checker warnings, it also defeats the very purpose of having type annotations. Being overly permissive easily leads to subtle bugs lurking undetected.
+
+- **Neglecting strict mode**. Many developers miss out by not enabling stricter settings in their type checker, like mypy's `--strict`. This leniency leaves unnecessary room for error.
+
+- **Abuse of isinstance** While often quick way to ensure something is called for only appropriate types, usually such run-time checks could be turned into compile- (or build-) time checks
+
+- **Validating the same thing multiple times**. Especially common with Optional values, there are many ways to avoid this, some of which were shown in this article.
+
+The core objective of effective typing isn't just error detection, but *clarity* and *maintainability*. Well-designed types can make the code easier to understand, reducing cognitive overhead. However, it may be worth noting that poorly designed or overly complex annotations can have the opposite effect. If your annotations start obscuring your logic rather than clarifying it, consider simplifying your approach.
+
+##  Conclusion
+
+Using types effectively can greatly enhance the robustness and maintainability of your code by enabling you to catch errors at compile time^[-> here: when type-checking, but I'm sure we get that already]
+
+We began with the simple idea of replacing arbitrary dictionaries with fixed data structures, strategy that not only guards against coarse errors, but also improves readability and makes large codebases easier to extend. Ultimately, we demonstrated how mypy can model valid state transitions by emulating *sum types* with unions and dataclasses, and *phantom types* by combining sum types with `NewType` and `Generics`, all without making the implementation impractically convoluted. While some of these constructs are more ergonomic in statically compiled languages, mypy is powerful enough to provide Python developers with a rich toolkit for achieving much stronger type safety.
+
+To summarize, consider using
+
+- enums for constrained values
+- union types with dataclasses for basic adts* union types allow you to model multiple possible type
+- newtype for domain-specific types with common concrete type
+- generics for type-safe collections
+- type guards for runtime validation
+- phantom types for expressing multiple, independent extra constraints
+
+And finally, likely the most powerful idea: eliminate invalid states by **expressing valid state transitions using the type system**.
+
+##  Further reading
+
+
+For more information on type systems and their applications, consider
+the following resources:
+
+::: {#refs}
+:::
+
+
+## APPENDIX A{.appendix}
+
+You can download all [code examples](/static/code.zip){.download} used here
