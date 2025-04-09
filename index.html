@@ -413,6 +413,19 @@ Note
 <span id="cb6-20"><a href="#cb6-20"></a>heal_player(player_id, <span class="dv">5</span>)</span>
 <span id="cb6-21"><a href="#cb6-21"></a></span>
 <span id="cb6-22"><a href="#cb6-22"></a>damage_monster(player_id, <span class="dv">10</span>)  <span class="co"># type: ignore[arg-type]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>I run linters and mypy on all code samples before publishing, and <code># type: ignore</code> comment ensures code works as intended. If mypy would <em>not</em> trigger an error on such line, <em>ruff</em> would complain about unnecessary <code>type: ignore</code>, thus ensuring that types really prevent invalid code.</p>
+</div>
+</div>
 <p>This approach provides more type safety, as the type checker will catch any attempts to mix up different types of IDs with zero runtime overhead, since <code>NewType</code> is erased at runtime. It also makes code more self-documenting, as the type system prominently indicates what kind of ID is expected.</p>
 </section>
 <section id="generic-fantasy-inventory-system" class="level2 page-columns page-full">
@@ -865,8 +878,7 @@ Note
 <p>There are many more advanced concepts in type systems that we haven’t covered here. For example:</p>
 <ul>
 <li><strong>Generalized Algebraic Datatypes</strong>: GADTs extend ADTs, allowing constructors’ result types to depend on input argument types, enabling more precise type-level constraints and stronger compile-time guarantees</li>
-<li><strong>Dependent Types</strong>: Types that depend on other types</li>
-<li><strong>Type Inference</strong>: Automatically determining types based on usage</li>
+<li><strong>Dependent Types</strong>: Types that may depend on values</li>
 <li><strong>Type-Level Programming</strong>: Programming at the level of types rather than values</li>
 </ul>
 </section>
