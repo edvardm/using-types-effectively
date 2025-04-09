@@ -126,6 +126,9 @@ In our dungeon crawler, we might have different types of IDs that are all intege
 
 ```{.python include="examples/ex_3.py" code-line-numbers="true"}
 ```
+::: {.callout-note}
+I run linters and mypy on all code samples before publishing, and `# type: ignore` comment ensures code works as intended. If mypy would _not_ trigger an error on such line, *ruff* would complain about unnecessary `type: ignore`, thus ensuring that types really prevent invalid code.
+:::
 
 This approach provides more type safety, as the type checker will catch any attempts to mix up different types of IDs with zero runtime overhead, since `NewType` is erased at runtime. It also makes code more self-documenting, as the type system prominently indicates what kind of ID is expected.
 
