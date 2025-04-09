@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.6.42">
+<meta name="generator" content="quarto-1.6.43">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -86,22 +86,11 @@ div.csl-indent {
 <script src="ute_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="ute_files/libs/quarto-html/anchor.min.js"></script>
 <link href="ute_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="ute_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="ute_files/libs/quarto-html/quarto-syntax-highlighting-d4d76bf8491c20bad77d141916dc28e1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="ute_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="ute_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="ute_files/libs/bootstrap/bootstrap-e08ec9db1b5a10040b19adb0475541e4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="ute_files/libs/bootstrap/bootstrap-58195ada163f9b939e0c719e571d61e9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <style>
-div.callout-cs.callout {
-  border-left-color: blue;
-}
-div.callout-cs.callout-style-default > .callout-header {
-  background-color: rgb(from blue r g b / 13%);
-}
-div.callout-cs .callout-toggle::before {  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="rgb(33, 37, 41)" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');}
-div.callout-cs.callout-style-default .callout-icon::before, div.callout-cs.callout-titled .callout-icon::before {
-  content: '🎓';
-  background-image: none;
-}
 div.callout-fixme.callout {
   border-left-color: orange;
 }
@@ -111,6 +100,17 @@ div.callout-fixme.callout-style-default > .callout-header {
 div.callout-fixme .callout-toggle::before {  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="rgb(33, 37, 41)" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');}
 div.callout-fixme.callout-style-default .callout-icon::before, div.callout-fixme.callout-titled .callout-icon::before {
   content: '⚠️';
+  background-image: none;
+}
+div.callout-cs.callout {
+  border-left-color: blue;
+}
+div.callout-cs.callout-style-default > .callout-header {
+  background-color: rgb(from blue r g b / 13%);
+}
+div.callout-cs .callout-toggle::before {  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="rgb(33, 37, 41)" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');}
+div.callout-cs.callout-style-default .callout-icon::before, div.callout-cs.callout-titled .callout-icon::before {
+  content: '🎓';
   background-image: none;
 }
 </style>
@@ -384,7 +384,7 @@ Note
 <span id="cb5-31"><a href="#cb5-31"></a>        <span class="cf">case</span> Weapon(name<span class="op">=</span>name, damage<span class="op">=</span>damage):</span>
 <span id="cb5-32"><a href="#cb5-32"></a>            <span class="cf">return</span> <span class="ss">f"Grabbed </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">, dealing </span><span class="sc">{</span>damage<span class="sc">}</span><span class="ss"> damage)"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This implementation offers several advantages over our previous dictionary-based approach. First, the type checker provides static verification, ensuring that <code>use_item()</code> only accepts our defined classes. The code becomes more readable as each type’s properties are explicitly defined in the class structure. When we need to extend our system with new variants (such as adding an <code>Armor</code> class), the type checker would immediately alert us if we haven’t handled the new case. Perhaps most elegantly, the <code>match</code> statement works harmoniously with our sum type, providing a clean and exhaustive way to handle all possible variants without nested conditionals.</p>
-<div class="page-columns page-full"><p>The last point is worth emphasizing: <code>match</code> plays particularly well here because there is no need for catch-all <code>case _</code> branch. So unless the condition is trivial, we would prefer <code>match</code> over <code>if</code>. The code is also more clear to read, as each case is necessarily compared against the same, single expression.</p><div class="no-row-height column-margin column-container"><span class="margin-aside">With if statement, each elif-branch could have completely unrelated, different condition</span></div></div>
+<div class="page-columns page-full"><p>The last point is worth emphasizing: <code>match</code> plays particularly well here because there is no need for catch-all <code>case _</code> branch. So unless the condition is trivial, we would prefer <code>match</code> over <code>if</code>. The code is also more clear to read, as each case is necessarily compared against the same, single expression.</p><div class="no-row-height column-margin column-container"><span class="margin-aside">With <em>if</em> statement, each <em>elif</em>-branch could have completely unrelated, different condition. In some cases it is not clear unless each branch is read very carefully; <em>match</em> can make this obvious</span></div></div>
 <p>We would also get much better autocompletion for most IDEs/editors by using dataclasses over (even) typed dictionaries.</p>
 </section>
 <section id="a-newtype-of-identity" class="level2">
