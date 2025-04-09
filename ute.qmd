@@ -241,8 +241,7 @@ Using `--strict` with mypy is probably necessary for any working phantom type im
 There are many more advanced concepts in type systems that we haven't covered here. For example:
 
 - **Generalized Algebraic Datatypes**: GADTs extend ADTs, allowing constructors' result types to depend on input argument types, enabling more precise type-level constraints and stronger compile-time guarantees
-- **Dependent Types**: Types that depend on other types
-- **Type Inference**: Automatically determining types based on usage
+- **Dependent Types**: Types that may depend on values
 - **Type-Level Programming**: Programming at the level of types rather than values
 
 

@@ -48,8 +48,8 @@ dev-init: .venv .copy-sample-direnv .make-setup-quarto ## setup project
 build: fmt lint render $(STATIC_DIR)/code.zip .post-trim ## build project
 
 .PHONY: publish
-publish: fmt lint  ## publish to gh-pages
-	quarto publish --no-render gh-pages
+publish: fmt lint   ## publish to gh-pages
+	quarto publish --no-prompt gh-pages
 
 .PHONY: .post-trim
 .post-trim:
