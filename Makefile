@@ -5,6 +5,14 @@ STATIC_DIR := _site/static
 YELLOW := \033[1;33m
 RESET := \033[0m
 
+# Detect OS and set SED command accordingly
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    SED := gsed
+else
+    SED := sed
+endif
+
 .PHONY: help
 help: ## show this help
 	@echo ""
@@ -41,7 +49,7 @@ build: fmt lint render $(STATIC_DIR)/code.zip .post-trim ## build project
 
 .PHONY: .post-trim
 .post-trim:
-	gsed -i /fmt\:/d $(COMPILED_DOC)
+	$(SED) -i /fmt\:/d $(COMPILED_DOC)
 
 $(STATIC_DIR)/code.zip:
 	mkdir -p $(STATIC_DIR) ; zip -r $@ examples/*.py
