@@ -1,5 +1,5 @@
 DOC := ute.qmd
-COMPILED_DOC := _site/index.html
+COMPILED_DOC := _site/ute.html
 STATIC_DIR := _site/static
 
 YELLOW := \033[1;33m
@@ -47,6 +47,10 @@ dev-init: .venv .copy-sample-direnv .make-setup-quarto ## setup project
 .PHONY: build
 build: fmt lint render $(STATIC_DIR)/code.zip .post-trim ## build project
 
+.PHONY: publish
+publish:
+	quarto publish --no-render gh-pages
+
 .PHONY: .post-trim
 .post-trim:
 	$(SED) -i /fmt\:/d $(COMPILED_DOC)
@@ -62,7 +66,7 @@ test: $(COMPILED_DOC)
 	pytest --ff -x --markdown-docs $< tests
 
 $(COMPILED_DOC): $(DOC) custom.scss _quarto.yml $(wildcard examples/*.py)
-	quarto render $< -o index.html
+	quarto render $< -o ute.html
 
 .PHONY: fmt
 fmt: ## format code
@@ -73,22 +77,11 @@ lint: ## lint code
 	ruff check --fix **/*.py
 	mypy examples/
 
-.PHONY: export-md
-export-md: $(COMPILED_DOC).gz
-
-$(COMPILED_DOC).gz: $(COMPILED_DOC)
-	gzip < $< > $@
-
 .PHONY: clean
 clean:  ## clean artifacts
 	rm -f *.gz **/*.pyc
 	rm -rf **/__pycache__/
 
-
 .PHONY: export
  export: ## export relevant files to .tar.gz
 	git ls-files --exclude-standard | tar -cvzf ute.tar.gz -T -
-
-.PHONY: zip
-zip: render
-	rm -f site.zip ; zip -r site.zip _site/
